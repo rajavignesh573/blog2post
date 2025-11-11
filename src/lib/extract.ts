@@ -1,6 +1,4 @@
 import { Readability } from "@mozilla/readability";
-import { JSDOM } from "jsdom";
-
 import type { BlogMetadata } from "@/types/conversion";
 
 export interface ExtractedArticle {
@@ -49,6 +47,15 @@ function getCanonical(doc: Document, url: string): CanonicalResult {
   return { href: url, source: "input" };
 }
 
+let jsdomModulePromise: Promise<typeof import("jsdom")> | null = null;
+
+async function getJsdomModule() {
+  if (!jsdomModulePromise) {
+    jsdomModulePromise = import("jsdom");
+  }
+  return jsdomModulePromise;
+}
+
 export async function extractArticleFromUrl(url: string): Promise<ExtractedArticle> {
   const response = await fetch(url, {
     headers: {
@@ -67,6 +74,7 @@ export async function extractArticleFromUrl(url: string): Promise<ExtractedArtic
   }
 
   const html = await response.text();
+  const { JSDOM } = await getJsdomModule();
   const dom = new JSDOM(html, { url });
   const doc = dom.window.document;
 
